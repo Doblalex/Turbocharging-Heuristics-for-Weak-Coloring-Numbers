@@ -1,5 +1,15 @@
 #include "Ordering.hpp"
-
+/**
+ * @brief Construct a new Ordering:: Ordering object
+ *
+ * @param graph the input graph
+ * @param r the radius
+ * @param track_full_neighbours have a set vertices that have weakly reachable set of size k, only for lastc turbocharging
+ * @param do_lower_bound apply the WCOL-MMD+ lower bound
+ * @param do_graph_adj_ordered apply the ordered adjacency list
+ * @param ignore_right ignore weakly reachable sets of free vertices for lower bounding
+ * @param opt_components use connected components for branching order in lastc turbocharging and heuristic parts
+ */
 Ordering::Ordering(OrderedGraph &graph, int r, bool track_full_neighbours, bool do_lower_bound, bool do_graph_adj_ordered, bool ignore_right, bool opt_components) : graph(graph), track_full_neighbours(track_full_neighbours), do_lower_bound(do_lower_bound), do_graph_adj_ordered(do_graph_adj_ordered), ignore_right(ignore_right), opt_components(opt_components)
 {
     BGL_FORALL_VERTICES(v, graph, OrderedGraph)
@@ -44,6 +54,12 @@ Ordering::Ordering(OrderedGraph &graph, int r, bool track_full_neighbours, bool 
     }
 }
 
+/**
+ * @brief computes inverse weakly reachable set
+ *
+ * @param src the source vertex
+ * @return vector<int> list of all vertices that are reachable within r steps right of src
+ */
 vector<int> Ordering::RReachableRight(int src)
 {
     if (do_graph_adj_ordered)
@@ -85,8 +101,15 @@ vector<int> Ordering::RReachableRight(int src)
     return reachable;
 }
 
+/**
+ * @brief computes inverse weakly reachable set, but uses ordered adjacency list
+ *
+ * @param src the source vertex
+ * @return vector<int> list of all vertices that are reachable within r steps right of src
+ */
 vector<int> Ordering::RReachableRightOptimized(const int src)
 {
+    assert(this->do_graph_adj_ordered);
     static vector<bool> vis(boost::num_vertices(this->graph), false);
     int position_src = graph[src].position;
 
@@ -126,6 +149,12 @@ vector<int> Ordering::RReachableRightOptimized(const int src)
     return reachable;
 }
 
+/**
+ * @brief compute rneighbourhood
+ *
+ * @param src the source vertex
+ * @return vector<int> a list of vertices that are reachable within r steps in graph
+ */
 vector<int> Ordering::RReachable(int src)
 {
     static vector<bool> vis(boost::num_vertices(this->graph), false);
@@ -165,6 +194,12 @@ vector<int> Ordering::RReachable(int src)
     return reachable;
 }
 
+/**
+ * @brief add u to the weakly reachable set of vertex
+ *
+ * @param vertex a vertex
+ * @param u a vertex
+ */
 void Ordering::WreachAdd(int vertex, int u)
 {
     assert(vertex != u);
@@ -182,6 +217,7 @@ void Ordering::WreachAdd(int vertex, int u)
              this->graph[vertex].wreach_sz == target_k &&
              this->graph[vertex].position == NOT_PLACED)
     {
+        // a bit complicated to keep track of full vertices
         for (auto v : RReachableRight(vertex))
         {
             if (v != vertex && graph[v].wreach_sz >= target_k)
@@ -195,6 +231,12 @@ void Ordering::WreachAdd(int vertex, int u)
     }
 }
 
+/**
+ * @brief remove u from the weakly reachable set of vertex
+ *
+ * @param vertex a vertex
+ * @param u a vertex
+ */
 void Ordering::WreachRem(int vertex, int u)
 {
     assert(vertex != u);
@@ -225,6 +267,11 @@ void Ordering::WreachRem(int vertex, int u)
     }
 }
 
+/**
+ * @brief Place a vertex to the right of the current subordering. Expects the ordering to have "no holes"
+ *
+ * @param vertex the vertex to place
+ */
 void Ordering::Place(int vertex)
 {
     assert(this->at < ordering.size());
@@ -245,6 +292,10 @@ void Ordering::Place(int vertex)
     this->RemoveVertex(vertex);
 }
 
+/**
+ * @brief Remove the rightmost vertex from the ordering. Expects ordering to have "no holes"
+ *
+ */
 void Ordering::UnPlace()
 {
     assert(at > 0);
@@ -263,6 +314,10 @@ void Ordering::UnPlace()
     this->AddVertex(vertex);
 }
 
+/**
+ * @brief returns if the ordering is extendable, depends on which lower bound we use
+ *
+ */
 bool Ordering::IsExtendable()
 {
     if (do_lower_bound)
@@ -271,11 +326,20 @@ bool Ordering::IsExtendable()
         return this->is_too_full.size() == 0 && this->is_full_neighbour.size() == 0;
 }
 
+/**
+ * @brief returns if the ordering is extendable ignore WCOL-MMD lower bound
+ *
+ */
 bool Ordering::IsExtendableNoLB()
 {
     return this->is_too_full.size() == 0 && this->is_full_neighbour.size() == 0;
 }
 
+/**
+ * @brief
+ *
+ * @return int maximum over all weakly reachable set sizes
+ */
 int Ordering::Wreach()
 {
     int mx = 0;
@@ -286,6 +350,10 @@ int Ordering::Wreach()
     return mx;
 }
 
+/**
+ * @brief Print the ordering from left to right
+ *
+ */
 void Ordering::PrintOrdering()
 {
     for (auto v : this->ordering)
@@ -295,11 +363,21 @@ void Ordering::PrintOrdering()
     cout << endl;
 }
 
+/**
+ * @brief returns true if the ordering is full and no weakly r-reachable set is too big
+ *
+ */
 bool Ordering::IsValidFull()
 {
     return at == ordering.size() && is_too_full.size() == 0;
 }
 
+/**
+ * @brief Swap two vertices
+ *
+ * @param v_in a vertex that is placed
+ * @param v_out a vertex that is not placed (free)
+ */
 void Ordering::SwapInOut(int v_in, int v_out)
 {
     this->changed.insert(v_in);
@@ -307,6 +385,7 @@ void Ordering::SwapInOut(int v_in, int v_out)
     unordered_set<int> vertices_between_changable;
 
     // just for runtime optimization
+    // either we iterate over positions or over the weakl reachable set
     if (this->at - this->graph[v_in].position - 1 <= this->wreach_inv[v_in].size() + this->wreach[v_out].size())
     {
         for (int pos = this->graph[v_in].position + 1; pos < at; pos++)
@@ -337,7 +416,6 @@ void Ordering::SwapInOut(int v_in, int v_out)
             }
         }
     }
-    // cout << "Optimized: " << vertices_between_changable.size() << " " << at - this->graph[v_in].position + 1 << endl;
 
     // swap positions of the two vertices
     ChangePosition(v_out, this->graph[v_in].position);
@@ -367,6 +445,12 @@ void Ordering::SwapInOut(int v_in, int v_out)
     this->RemoveVertex(v_out);
 }
 
+/**
+ * @brief Swap two vertices
+ *
+ * @param vleft a vertex that is placed
+ * @param vright a vertex that is placed
+ */
 void Ordering::SwapInIn(int vleft, int vright)
 {
     this->changed.insert(vleft);
@@ -440,7 +524,10 @@ void Ordering::SwapInIn(int vleft, int vright)
 }
 
 /**
- * Assumes position of v1 is smaller tan the one of v1
+ * @brief swaps two vertices, assumes position of v1 is smaller than position of v2
+ *
+ * @param v1 a vertex
+ * @param v2 a vertex
  */
 void Ordering::Swap(int v1, int v2)
 {
@@ -461,8 +548,9 @@ void Ordering::Swap(int v1, int v2)
 }
 
 /**
- * This function assumes that the "Place" function is correctly implemented.
- **/
+ * @brief helper function for correctness test. This function assumes that the "Place" function is correctly implemented.
+ *
+ */
 void Ordering::VerifyImpl()
 {
     int n = boost::num_vertices(graph);
@@ -510,6 +598,10 @@ void Ordering::VerifyImpl()
     }
 }
 
+/**
+ * @brief helper function for correctness test. This function assumes that the "Place" function is correctly implemented.
+ *
+ */
 void Ordering::VerifyImplMerge(vector<int> &hackordering, vector<int> ignored)
 {
     int n = boost::num_vertices(graph);
@@ -549,6 +641,12 @@ void Ordering::VerifyImplMerge(vector<int> &hackordering, vector<int> ignored)
     }
 }
 
+/**
+ * @brief Place a vertex at a specific position
+ *
+ * @param vertex
+ * @param position
+ */
 void Ordering::Place(int vertex, int position)
 {
     assert(!this->track_full_neighbours);
@@ -599,6 +697,11 @@ void Ordering::Place(int vertex, int position)
     this->RemoveVertex(vertex);
 }
 
+/**
+ * @brief remove a vertex from a specific position
+ *
+ * @param position
+ */
 void Ordering::Unplace(int position)
 {
     assert(!this->track_full_neighbours);
@@ -644,6 +747,11 @@ void Ordering::Unplace(int position)
     this->AddVertex(vertex);
 }
 
+/**
+ * @brief update inverse weakly reachable set of u
+ *
+ * @param u a vertex
+ */
 void Ordering::UpdateWreach(int u)
 {
     this->changed.insert(u);
@@ -683,6 +791,12 @@ void Ordering::UpdateWreach(int u)
     }
 }
 
+/**
+ * @brief update inverse weakly reachable set of u, keeping track of what has been added where
+ *
+ * @param u a vertex
+ * @param alladded pairs of which vertex has been added to which weakly reachable set
+ */
 void Ordering::UpdateWreachHelper(int u, unordered_set<pair<int, int>, boost::hash<std::pair<int, int>>> &alladded)
 {
     assert(this->graph[u].position != NOT_PLACED);
@@ -722,6 +836,11 @@ void Ordering::UpdateWreachHelper(int u, unordered_set<pair<int, int>, boost::ha
     }
 }
 
+/**
+ * @brief Reset an ordering to another one given by an array of vertices, expects that these vertices are continuous
+ *
+ * @param oldordering
+ */
 void Ordering::ResetTo(vector<int> &oldordering)
 {
     BGL_FORALL_VERTICES(v, graph, OrderedGraph)
@@ -756,6 +875,11 @@ void Ordering::ResetTo(vector<int> &oldordering)
     }
 }
 
+/**
+ * @brief changes the activity status of a vertex
+ *
+ * @param v
+ */
 void Ordering::AddVertex(int v)
 {
     for (auto w : boost::make_iterator_range(boost::adjacent_vertices(v, graph)))
@@ -769,6 +893,11 @@ void Ordering::AddVertex(int v)
     vertices_active.insert(v);
 }
 
+/**
+ * @brief changes the activity status of a vertex
+ *
+ * @param v
+ */
 void Ordering::RemoveVertex(int v)
 {
     for (auto w : vector<int>(graph_notplaced[v].begin(), graph_notplaced[v].end()))
@@ -779,6 +908,12 @@ void Ordering::RemoveVertex(int v)
     vertices_active.erase(v);
 }
 
+/**
+ * @brief Computes the r-neighbourhood in G[T] where T are the free vertices
+ *
+ * @param src a vertex
+ * @return vector<int> a list of vertices
+ */
 vector<int> Ordering::RReachableNotPlaced(int src)
 {
     static vector<bool> vis(boost::num_vertices(this->graph), false);
@@ -822,6 +957,12 @@ vector<int> Ordering::RReachableNotPlaced(int src)
     return reachable;
 }
 
+/**
+ * @brief Computes the connected component of free vertices where src is a part of
+ *
+ * @param src a vertex
+ * @return vector<int> a list of vertices
+ */
 vector<int> Ordering::ComponentNotPlaced(int src)
 {
     static vector<bool> vis(boost::num_vertices(this->graph), false);
@@ -857,6 +998,12 @@ vector<int> Ordering::ComponentNotPlaced(int src)
     return reachable;
 }
 
+/**
+ * @brief returns true if the f-degeneracy lower bound is exceeded
+ *
+ * @return true
+ * @return false
+ */
 bool Ordering::IsLBDegeneracyExceed()
 {
     set<pair<int, int>> pq;
@@ -893,6 +1040,11 @@ bool Ordering::IsLBDegeneracyExceed()
     return lb_exceeded;
 }
 
+/**
+ * @brief returns the f-degeneracy lower bound
+ *
+ * @return int
+ */
 int Ordering::LBDegeneracy()
 {
     set<pair<int, int>> pq;
@@ -926,6 +1078,12 @@ int Ordering::LBDegeneracy()
     return mx;
 }
 
+/**
+ * @brief returns true if the WCOL-MMD+-UB lower bound is exceeded
+ *
+ * @return true
+ * @return false
+ */
 bool Ordering::IsLBDegeneracyContractExceed()
 {
     set<pair<int, int>> pq;
@@ -1015,6 +1173,11 @@ bool Ordering::IsLBDegeneracyContractExceed()
     return lb_exceeded;
 }
 
+/**
+ * @brief returnsthe WCOL-MMD+-UB lower bound
+ *
+ * @return int
+ */
 int Ordering::LBDegeneracyContract()
 {
     set<pair<int, int>> pq;
@@ -1100,6 +1263,11 @@ int Ordering::LBDegeneracyContract()
     return LB;
 }
 
+/**
+ * @brief returns the WCOL-MMD+ lower bound
+ *
+ * @return int
+ */
 int Ordering::LBDegeneracyContractSubGraph()
 {
     set<pair<int, int>> pq;
@@ -1238,10 +1406,24 @@ int Ordering::LBDegeneracyContractSubGraph()
     return LB;
 }
 
+/**
+ * @brief Comparator by order
+ *
+ * @param v a vertex
+ * @param graph
+ */
 Ordering::CompByOrder::CompByOrder(const int v, const OrderedGraph &graph) : v(v), graph(graph)
 {
 }
 
+/**
+ * @brief compares two vertices based on their position
+ *
+ * @param a
+ * @param b
+ * @return true
+ * @return false
+ */
 bool Ordering::CompByOrder::operator()(const int a, const int b) const
 {
     if (this->graph[a].position == this->graph[b].position)
@@ -1251,6 +1433,12 @@ bool Ordering::CompByOrder::operator()(const int a, const int b) const
     return this->graph[a].position > this->graph[b].position;
 }
 
+/**
+ * @brief changes the position of a vertex, helper function, is already called in place and unplace functions
+ *
+ * @param u a vertex
+ * @param pos the position
+ */
 void Ordering::ChangePosition(const int u, const int pos)
 {
     if (do_graph_adj_ordered)

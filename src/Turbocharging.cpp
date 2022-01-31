@@ -52,6 +52,7 @@ vector<int> BranchingSetUnordered::Get()
     shuffle(v.begin(), v.end(), rng);
     return v;
 }
+
 /** Algorithm by Floyd
  * Generates k random values between 1 and N inclusive
  */
@@ -83,9 +84,15 @@ TurbochargerLastC::TurbochargerLastC(Ordering &ordering, OrderedGraph &graph, ve
     this->at = ordering.at;
 }
 
-// placing vertices recursively in ordering
-// free vertices have to be a continuous region starting at the end of the subordering
-// weakly reachable sets of graphs have to be maintained correctly corresponding to the ordering
+/**
+ * @brief placing vertices recursively in ordering
+ * free vertices are continuous region starting at the end of the subordering
+ * weakly reachable sets of graphs are maintained correctly corresponding to the ordering
+ *
+ * @param i the corrent position where vertices are placed
+ * @return true if successful
+ * @return false if not successful
+ */
 bool TurbochargerLastC::TryContinuous(int i)
 {
     if (i >= positions.size())
@@ -97,6 +104,7 @@ bool TurbochargerLastC::TryContinuous(int i)
 
     if (ordering.opt_components)
     {
+        // refine choices that can be placed based on connected component
         int vcomponent = -1;
         if (ordering.at > 0)
         {
@@ -117,6 +125,7 @@ bool TurbochargerLastC::TryContinuous(int i)
         vector<int> component = ordering.ComponentNotPlaced(vcomponent);
         unordered_set<int> scomponent(component.begin(), component.end());
         vector<int> choices_actual;
+
         for (auto v : choices)
         {
             if (scomponent.find(v) != scomponent.end())
@@ -129,6 +138,7 @@ bool TurbochargerLastC::TryContinuous(int i)
 
     for (int j = 0; j < choices.size(); j++)
     {
+        // try to place choices into current position
         auto u = choices[j];
 
         ordering.Place(u);
@@ -168,7 +178,6 @@ bool TurbochargerLastC::Turbocharge(int c, bool only_reorder, bool draw_problem,
     if (!only_reorder)
     {
         // branch on all possible vertices
-        // TODO: this can be optimized
         for (auto v : ordering.vertices_active)
         {
             if (graph[v].position == NOT_PLACED)
@@ -180,7 +189,7 @@ bool TurbochargerLastC::Turbocharge(int c, bool only_reorder, bool draw_problem,
 
     if (draw_problem)
     {
-        //GraphDrawer::getInstance().DrawGraph(graph);
+        // GraphDrawer::getInstance().DrawGraph(graph);
     }
 
     if (rule == RandomOrder)
@@ -212,6 +221,13 @@ TurbochargerRNeigh::TurbochargerRNeigh(Ordering &ordering, OrderedGraph &graph, 
     this->at = ordering.at;
 }
 
+/**
+ * @brief tries to fill the positions of the positions array with free vertices recursively
+ *
+ * @param i the current index in the positions array
+ * @return true if successful
+ * @return false if not successful
+ */
 bool TurbochargerRNeigh::TryNotContinuous(int i)
 {
     if (i >= positions.size())
@@ -271,7 +287,14 @@ bool TurbochargerRNeigh::TryNotContinuous(int i)
     return false;
 }
 
-bool TurbochargerRNeigh::TryNotContinuousOptimizedOld(int i)
+/**
+ * @brief tries to fill the positions of the positions array with free vertices recursively
+ *
+ * @param i the current index in the positions array
+ * @return true if successful
+ * @return false if not successful
+ */
+[[deprecated]] bool TurbochargerRNeigh::TryNotContinuousOptimizedOld(int i)
 {
     if (i >= positions.size())
         return this->ordering.IsExtendable();
@@ -333,6 +356,14 @@ bool TurbochargerRNeigh::TryNotContinuousOptimizedOld(int i)
     return false;
 }
 
+/**
+ * @brief tries to fill the positions of the positions array with free vertices recursively.
+ * Optimized version that does not place all vertices inbetween all the time
+ *
+ * @param i the current index in the positions array
+ * @return true if successful
+ * @return false if not successful
+ */
 bool TurbochargerRNeigh::TryNotContinuousOptimized(int i)
 {
     if (i >= positions.size())
@@ -387,7 +418,7 @@ bool TurbochargerRNeigh::Turbocharge(int c, bool only_reorder, bool draw_problem
     unordered_set<int> rneighbourhood;
     if (ordering.is_too_full.size() == 0)
     {
-        // local search had lower bound
+        // other lower bound by contractions or f-degeneracy
         vector<int> rreachable = ordering.RReachable(ordering.ordering[ordering.at - 1]);
         rneighbourhood.insert(rreachable.begin(), rreachable.end());
     }
@@ -413,7 +444,6 @@ bool TurbochargerRNeigh::Turbocharge(int c, bool only_reorder, bool draw_problem
         // take some random vertices of the rneighbourhood
         shuffle(positions_rneighbourhood.begin(), positions_rneighbourhood.end(), rng);
         vector<int> freevec;
-        // unordered_set<int> free;
 
         c = min(c, (int)positions_rneighbourhood.size());
         for (int i = 0; i < c; i++)
@@ -469,7 +499,7 @@ bool TurbochargerRNeigh::Turbocharge(int c, bool only_reorder, bool draw_problem
     return false;
 }
 
-bool TurbochargerRNeigh::TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule)
+[[deprecated]] bool TurbochargerRNeigh::TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule)
 {
     assert(!ordering.IsExtendable());
     positions.clear(); // positions we want to branch on
@@ -617,7 +647,7 @@ bool TurbochargerWreach::TryNotContinuous(int i)
     return false;
 }
 
-bool TurbochargerWreach::TryNotContinuousOptimizedOld(int i)
+[[deprecated]] bool TurbochargerWreach::TryNotContinuousOptimizedOld(int i)
 {
     if (i >= positions.size())
         return this->ordering.IsExtendable();
@@ -726,7 +756,7 @@ bool TurbochargerWreach::TryNotContinuousOptimized(int i)
     return false;
 }
 
-bool TurbochargerWreach::TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule)
+[[deprecated]] bool TurbochargerWreach::TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule)
 {
     assert(!ordering.IsExtendable());
     positions.clear(); // positions we want to branch on
@@ -815,7 +845,7 @@ bool TurbochargerWreach::Turbocharge(int c, bool only_reorder, bool draw_problem
     unordered_set<int> wreach_union;
     if (ordering.is_too_full.size() == 0)
     {
-        // local search had lower bound
+        // lower bound from WCOL-MMD or f-degeneracy
         int v = ordering.ordering[ordering.at - 1];
         wreach_union.insert(ordering.wreach[v].begin(), ordering.wreach[v].end());
     }
@@ -964,7 +994,7 @@ bool TurbochargerSwapNeighbours::Turbocharge(bool draw_problem)
 {
     if (draw_problem)
     {
-        //GraphDrawer::getInstance().DrawGraph(graph);
+        // GraphDrawer::getInstance().DrawGraph(graph);
     }
 
     for (int d = 1; d < 100; d++)
@@ -987,73 +1017,14 @@ TurbochargerSwapLocalSearch::TurbochargerSwapLocalSearch(Ordering &ordering, Ord
     assert(this->at > 0);
 }
 
-bool TurbochargerSwapLocalSearch::Try(int depth)
-{
-    if (ordering.IsExtendable())
-        return true;
-
-    if (depth >= depth_limit)
-        return false;
-
-    int v = *ordering.is_too_full.begin();
-
-    int right_index = graph[v].position == NOT_PLACED ? at - 1 : graph[v].position - 1;
-    int left_index = 0;
-
-    /*for (auto w : force_left[v])
-    {
-        if (graph[w].position == NOT_PLACED)
-        {
-            left_index = right_index + 1;
-        }
-        else
-        {
-            left_index = max(left_index, graph[w].position + 1);
-        }
-    }
-    if (right_index >= left_index)
-    {
-        int k_samples = min(right_index - left_index + 1, this->branching_factor);
-        unordered_set<int> samples_s = KFromN(right_index - left_index + 1, k_samples, rng);
-        vector<int> samples;
-        for (auto sample : samples_s)
-            samples.push_back(sample - 1 + left_index);
-        shuffle(samples.begin(), samples.end(), rng);
-
-        for (auto sample : samples)
-        {
-            int w = ordering.ordering[sample];
-            ordering.Swap(w, v);
-            if (graph[v].wreach_sz <= target_k)
-            {
-                force_left[w].insert(v);
-                if (Try(depth + 1))
-                {
-                    return true;
-                }
-                force_left[w].erase(v);
-            }
-            ordering.Swap(v, w);
-        }
-    }*/
-
-    int ind = (rand() % (right_index - left_index + 1)) + left_index;
-    if (depth > 50)
-    {
-        ind = right_index;
-    }
-    int w = ordering.ordering[ind];
-    ordering.Swap(w, v);
-    if (Try(depth + 1))
-    {
-        return true;
-    }
-    ordering.Swap(v, w);
-    return false;
-}
-
+/**
+ * @brief swaps vertices more globally, see thesis local search rule 1
+ *
+ * @param q keeps track of weakly reachable set sizes and vertices in ordered set
+ */
 void TurbochargerSwapLocalSearch::SwapLocalSearch(set<pair<int, int>> &q)
 {
+
     int SWAPS = 20;
 
     int i = 0;
@@ -1090,26 +1061,30 @@ void TurbochargerSwapLocalSearch::SwapLocalSearch(set<pair<int, int>> &q)
     }
 }
 
+/**
+ * @brief swaps vertices more locally, see thesis local search rule 2
+ *
+ * @param q keeps track of weakly reachable set sizes and vertices in ordered set
+ */
 bool TurbochargerSwapLocalSearch::Turbocharge(bool draw_problem)
 {
-    this->force_left.clear();
     if (draw_problem)
     {
-        //GraphDrawer::getInstance().DrawGraph(graph);
+        // GraphDrawer::getInstance().DrawGraph(graph);
     }
 
-    unordered_set<int> really_changed;
-    set<pair<int, int>> q;
-    vector<int> wreach_in_q(boost::num_vertices(graph));
+    unordered_set<int> really_changed;                   // keep track of vertices whose weakly reachable sets change
+    set<pair<int, int>> q;                               // ordered set for vertices and their weakly reachable sets
+    vector<int> wreach_in_q(boost::num_vertices(graph)); // weakly reachable set size in q
     BGL_FORALL_VERTICES(v, graph, OrderedGraph)
     {
         q.insert({graph[v].wreach_sz, v});
         wreach_in_q[v] = graph[v].wreach_sz;
     }
 
-    int best = ordering.is_too_full.size();
-    int steps_from_imp = 0;
-    int STEPS_UNTIL_RANDOM = 50;
+    int best = ordering.is_too_full.size(); // best count of overfull vertices
+    int steps_from_imp = 0;                 // steps from the last improvement
+    int STEPS_UNTIL_RANDOM = 50;            // we do 50 steps and then random again
     while (!this->ordering.IsExtendable())
     {
         if (ordering.is_too_full.size() < best)
@@ -1133,7 +1108,7 @@ bool TurbochargerSwapLocalSearch::Turbocharge(bool draw_problem)
             best = ordering.is_too_full.size();
             steps_from_imp = 0;
         }
-        //cout << this->ordering.is_too_full.size() << endl;
+        // cout << this->ordering.is_too_full.size() << endl;
         auto it = prev(q.end());
         int rs = rand() % (min(10, (int)boost::num_vertices(graph)));
         for (int i = 0; i < rs; i++)
@@ -1143,7 +1118,7 @@ bool TurbochargerSwapLocalSearch::Turbocharge(bool draw_problem)
 
         int v = it->second;
         int target = max(1, graph[v].wreach_sz - 1 - rand() % 3);
-        //cout << v << " " << graph[v].wreach_sz << endl;
+        // cout << v << " " << graph[v].wreach_sz << endl;
         while (graph[v].wreach_sz > target)
         {
             int leftind = graph[v].position == NOT_PLACED ? at - 1 : graph[v].position - 1;
@@ -1157,7 +1132,7 @@ bool TurbochargerSwapLocalSearch::Turbocharge(bool draw_problem)
         }
         really_changed.insert(ordering.changed.begin(), ordering.changed.end());
         ordering.changed.clear();
-        //cout << v << " " << graph[v].wreach_sz << endl;
+        // cout << v << " " << graph[v].wreach_sz << endl;
         steps_from_imp++;
     }
     ordering.changed.insert(really_changed.begin(), really_changed.end());
@@ -1171,7 +1146,14 @@ TurbochargerMerge::TurbochargerMerge(Ordering &ordering, OrderedGraph &graph) : 
     this->target_k = ordering.target_k;
 }
 
-bool TurbochargerMerge::Try(int i)
+/**
+ * @brief search tree algorithm for wcol-merge. This algorithm is not correct, as we do not try all vertices
+ *
+ * @param i we are placing the ith vertex
+ * @return true if successful
+ * @return false if not successful
+ */
+[[deprecated]] bool TurbochargerMerge::Try(int i)
 {
     if (i >= tryvertices.size() && ordering.IsExtendable())
         return true;
@@ -1246,18 +1228,30 @@ bool TurbochargerMerge::Try(int i)
     return false;
 }
 
+/**
+ * @brief search tree algorithm for wcol-merge
+ *
+ * @param vright the last rightmost vertex that was placed, we know that we can place all subsequent vertices to the left of this vertex due to the proof argument
+ * @return true if successful
+ * @return false if not successful
+ */
 bool TurbochargerMerge::Try2(int vright)
 {
     if (tryverticessbranch.size() == 0 && ordering.IsExtendable())
         return true;
+    // iterate over all vertices from S_2 that still need to be placed somewhere
     for (auto vertex : vector<int>(tryverticessbranch.begin(), tryverticessbranch.end()))
     {
+        // keep track of what we added to whose weakly reachable set
         unordered_set<pair<int, int>, boost::hash<std::pair<int, int>>> wreach_addedd;
+        // remove the vertex from S_2
         tryverticessbranch.erase(vertex);
+
+        // iterate over breaking points until weakly reachable set of vertex is too big
         while (graph[vertex].wreach_sz < target_k)
         {
-            int nextpos = -1;
-            if (graph[vertex].position == -1)
+            int nextpos = -1;                 // next position to place
+            if (graph[vertex].position == -1) // vertex was not placed before, place at beggining, we do not try first breakpoint here because we need inverse wreach of vertex either way to get first breakpoint
                 nextpos = 0;
             else
             {
@@ -1265,6 +1259,7 @@ bool TurbochargerMerge::Try2(int vright)
                 bool found = false;
                 for (auto w : ordering.wreach_inv[vertex])
                 {
+                    // get next breakpoint by iterating over inverse weakly reachable set
                     if (w != vertex && graph[w].position >= graph[vertex].position && graph[w].position < minpos)
                     {
                         minpos = graph[w].position;
@@ -1274,16 +1269,22 @@ bool TurbochargerMerge::Try2(int vright)
                 if (found)
                     nextpos = minpos + 1;
             }
+            // NOTE: We first need to place at 0 or after breakpoint to find out next breakpoint
+
+            // no breakpoint to the right or we have to place right of vright -> break
             if (nextpos == -1 || (vright != -1 && graph[vright].position < nextpos))
                 break;
 
+            // we do not need to update hackordering here, rreachableright and inverse wreach update works here when positions are fine
+            // it could be that positions of two vertices are the same but then they count as right of
             ordering.ChangePosition(vertex, nextpos);
             ordering.UpdateWreachHelper(vertex, wreach_addedd);
             if (nextpos != 0)
             {
+                // update inverse wreach of breakpoint
                 ordering.UpdateWreachHelper(hackordering[nextpos - 1], wreach_addedd);
             }
-            // compute actual next position that is left of the leftmost vertex in wreachinv
+            // compute actual next position that is left of the leftmost vertex in wreachinv (breakpoint)
             int minpos = INT_MAX;
             for (auto w : ordering.wreach_inv[vertex])
             {
@@ -1300,6 +1301,8 @@ bool TurbochargerMerge::Try2(int vright)
 
             int posi = nextpos;
             int temp = vertex;
+            // shift everything to the left and place the vertex at desired position
+            // fixed vertices will never be moved as we have enough space
             while (hackordering[posi] != -1)
             {
                 int tempp = hackordering[posi];
@@ -1320,6 +1323,7 @@ bool TurbochargerMerge::Try2(int vright)
             }
             posi = nextpos;
             hackordering[posi] = -1;
+            // remove the vertex from the hackordering again and shift everything until it fits
             while (posi > 0 &&
                    hackordering[posi - 1] != -1 &&
                    tryverticess.find(hackordering[posi - 1]) != tryverticess.end())
@@ -1330,6 +1334,7 @@ bool TurbochargerMerge::Try2(int vright)
                 posi--;
             }
         }
+        // undo all weakly reachable set updates that were done
         ordering.ChangePosition(vertex, -1);
         for (auto p : wreach_addedd)
         {
@@ -1340,16 +1345,19 @@ bool TurbochargerMerge::Try2(int vright)
     return false;
 }
 
+/**
+ * @brief Run one iteration of the wcol-merge algorithm with vertices being the set S_2
+ *
+ * @param vertices
+ * @return true
+ * @return false
+ */
 bool TurbochargerMerge::Run(unordered_set<int> &vertices)
 {
+    // save ordering before turbocharging
     vector<int> oldordering(ordering.ordering.begin(), ordering.ordering.end());
+    // ordering of vertices that stay
     vector<int> tempordering;
-
-    /*int cnt_not_in_ordering = 0;
-    for (auto v : vertices)
-    {
-        cnt_not_in_ordering++;
-    }*/
 
     for (auto v : ordering.ordering)
     {
@@ -1359,11 +1367,7 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
         }
     }
 
-    /*for (int i = 0; i < cnt_not_in_ordering && tempordering.size() > 0; i++)
-    {
-        tempordering.pop_back();
-    }*/
-
+    // reset everything
     ordering.is_too_full.clear();
     for (auto v : boost::make_iterator_range(boost::vertices(graph)))
     {
@@ -1378,12 +1382,13 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
         graph[v].wreach_sz = 1;
         ordering.ChangePosition(v, NOT_PLACED);
     }
-
     for (auto v : vertices)
     {
         ordering.ChangePosition(v, -1);
         ordering.RemoveVertex(v);
     }
+
+    // hackordering is the ordering of S_1 but has slots of size |S_2| between two vertices to be able to place vertices of S_2 inbetween
     hackordering = vector<int>(vertices.size() * (tempordering.size() + 1) + tempordering.size(), -1);
     for (int i = 0; i < tempordering.size(); i++)
     {
@@ -1395,6 +1400,7 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
     for (auto v : vertices)
     {
         // we know part of wreachinv of vertices that will not be placed
+        // this will add v to some weakly reachable sets of free vertices T
         ordering.ChangePosition(v, hackordering.size());
         ordering.UpdateWreach(v);
         ordering.ChangePosition(v, -1);
@@ -1402,6 +1408,7 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
 
     tryvertices = vector<int>(vertices.begin(), vertices.end());
     shuffle(tryvertices.begin(), tryvertices.end(), rng);
+    // we need two sets, because during branching we also need to sometimes know all vertices of S_2
     tryverticess = unordered_set<int>(vertices.begin(), vertices.end());
     tryverticessbranch = unordered_set<int>(vertices.begin(), vertices.end());
 
@@ -1410,6 +1417,7 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
         ordering.ResetTo(oldordering);
     else
     {
+        // build hackordering into real ordering
         int i = 0;
         for (auto v : hackordering)
         {
@@ -1425,34 +1433,37 @@ bool TurbochargerMerge::Run(unordered_set<int> &vertices)
     return succ;
 }
 
+/**
+ * @brief Try wcolmerge 10 times until ordering is extendable
+ *
+ * @param draw_problem
+ * @param c size of the random set S_2 that is chosen
+ * @return true
+ * @return false
+ */
 bool TurbochargerMerge::Turbocharge(bool draw_problem, int c)
 {
+    // always try to merge vertices that are too full
+    // if ignore-right is true then too full vertices are in the ordering!
     bool always_take_too_full = ordering.ignore_right;
 
     if (draw_problem)
     {
-        //GraphDrawer::getInstance().DrawGraph(graph);
+        // GraphDrawer::getInstance().DrawGraph(graph);
     }
 
     assert(!ordering.IsExtendable());
+    // first vertices to choose for sets S_2
     unordered_set<int> wreach_union;
 
     if (ordering.is_too_full.size() == 0)
     {
-        // local search had lower bound
+        // lower bound comes from f-degeneracy or WCOL-MMD
         int v = ordering.ordering[ordering.at - 1];
         wreach_union.insert(ordering.wreach[v].begin(), ordering.wreach[v].end());
     }
     for (auto v : ordering.is_too_full)
     {
-        //branchset.insert(v);
-        /* vector<int> rreachable = ordering.RReachable(v);
-        for (auto w : rreachable)
-        {
-            // if (graph[w].position != NOT_PLACED)
-            wreach_union.insert(w);
-        }
-        wreach_union.insert(v);*/
         wreach_union.insert(ordering.wreach[v].begin(), ordering.wreach_inv[v].end());
         if (always_take_too_full)
             wreach_union.erase(v);
@@ -1485,6 +1496,7 @@ bool TurbochargerMerge::Turbocharge(bool draw_problem, int c)
         if (always_take_too_full)
             branchset.insert(ordering.is_too_full.begin(), ordering.is_too_full.end());
         int have = branchset.size();
+        // insert some vertices from weakly reachable sets of overfull vertices
         for (int i = 0; i < min(c - have, (int)wreach_union_vec.size()); i++)
         {
             branchset.insert(wreach_union_vec[i]);
@@ -1492,6 +1504,7 @@ bool TurbochargerMerge::Turbocharge(bool draw_problem, int c)
 
         if (branchset.size() < c)
         {
+            // insert other vertices until we have c vertices
             unordered_set<int> nums = KFromN(rest_vec.size(), min(rest_vec.size(), c - branchset.size()), rng);
             for (auto num : nums)
             {

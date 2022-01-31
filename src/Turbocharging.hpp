@@ -3,12 +3,20 @@
 #include "Headers.hpp"
 #include "Ordering.hpp"
 
+/**
+ * @brief enumerator for branching rule order for tc-lastc, tc-rneigh, and tc-wreach
+ *
+ */
 enum BranchingRule
 {
     RandomOrder,
     ByDistance
 };
 
+/**
+ * @brief Comparator by distance from a vertex
+ *
+ */
 struct CompByDistance
 {
     const int problematic_vertex;
@@ -18,6 +26,10 @@ struct CompByDistance
     bool operator()(const int a, const int b) const;
 };
 
+/**
+ * @brief A keeps track of vertices that can be placed in a search tree node during branching
+ *
+ */
 class BranchingSet
 {
 public:
@@ -26,6 +38,10 @@ public:
     virtual vector<int> Get() = 0;
 };
 
+/**
+ * @brief Branching set that is ordered by a comparator
+ *
+ */
 class BranchingSetOrdered : public BranchingSet
 {
 private:
@@ -39,6 +55,10 @@ public:
     vector<int> Get();
 };
 
+/**
+ * @brief Unordered branchings set
+ *
+ */
 class BranchingSetUnordered : public BranchingSet
 {
 private:
@@ -137,10 +157,6 @@ public:
 class TurbochargerSwapLocalSearch
 {
 private:
-    int depth_limit;
-    int branching_factor;
-    bool Try(int depth);
-    unordered_map<int, unordered_set<int>> force_left;
     void SwapLocalSearch(set<pair<int, int>> &q);
 
 public:

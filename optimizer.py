@@ -93,7 +93,7 @@ if __name__ == "__main__":
             colnumber -= 1
             c = 1
             while True:
-                print(c)
+                print("conservation parameter: ", c)
                 if args.turbocharging in ["SwapLS", "SwapN"]:
                     out = subprocess.check_output(
                         options_prog+["--k", str(colnumber)], cwd="./src")
