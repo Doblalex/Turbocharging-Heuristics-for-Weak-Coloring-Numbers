@@ -337,10 +337,12 @@ bool TurbochargerRNeigh::TryNotContinuous(int i)
         if (ordering.IsExtendable())
         {
             free->Rem(u);
+            MY_LIB_IGNORE_DEPRECATED_BEGIN
             if (TryNotContinuousOptimizedOld(i + 1))
             {
                 return true;
             }
+            MY_LIB_IGNORE_DEPRECATED_END
             free->Add(u);
         }
 
@@ -568,7 +570,10 @@ bool TurbochargerRNeigh::Turbocharge(int c, bool only_reorder, bool draw_problem
     {
         free = new BranchingSetOrdered(freevec, CompByDistance(vertex, distance_matrix));
     }
+
+    MY_LIB_IGNORE_DEPRECATED_BEGIN
     bool succ = TryNotContinuousOptimizedOld(0);
+    MY_LIB_IGNORE_DEPRECATED_END
 
     if (!succ)
     {
@@ -690,10 +695,12 @@ bool TurbochargerWreach::TryNotContinuous(int i)
         if (ordering.IsExtendable())
         {
             free->Rem(u);
+            MY_LIB_IGNORE_DEPRECATED_BEGIN
             if (TryNotContinuousOptimizedOld(i + 1))
             {
                 return true;
             }
+            MY_LIB_IGNORE_DEPRECATED_END
             free->Add(u);
         }
 
@@ -825,7 +832,9 @@ bool TurbochargerWreach::TryNotContinuousOptimized(int i)
         free = new BranchingSetOrdered(freevec, CompByDistance(vertex, distance_matrix));
     }
     // bool succ = TryNotContinuous(0);
+    MY_LIB_IGNORE_DEPRECATED_BEGIN
     bool succ = TryNotContinuousOptimizedOld(0);
+    MY_LIB_IGNORE_DEPRECATED_END
 
     if (!succ)
     {
@@ -1203,10 +1212,12 @@ TurbochargerMerge::TurbochargerMerge(Ordering &ordering, OrderedGraph &graph) : 
         }
         if (ordering.IsExtendable())
         {
+            MY_LIB_IGNORE_DEPRECATED_BEGIN
             if (Try(i + 1))
             {
                 return true;
             }
+            MY_LIB_IGNORE_DEPRECATED_END
         }
         posi = nextpos;
         hackordering[posi] = -1;

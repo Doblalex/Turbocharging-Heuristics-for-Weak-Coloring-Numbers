@@ -127,6 +127,8 @@ int main(int argc, char **argv)
 {
     po::variables_map vm = ParseArgs(argc, argv);
     BranchingRule branching_rule;
+    int times_turbocharged = 0;
+    chrono::duration<double, std::milli> time_turbocharging = std::chrono::duration<double, std::milli>(0);
     if (vm["turbochargeLASTC"].as<bool>())
     {
         branching_rule = ByDistance;
@@ -191,9 +193,9 @@ int main(int argc, char **argv)
     }
     auto start = std::chrono::high_resolution_clock::now();
 
-    //std::cout << ordering.LBDegeneracy() << endl;
-    //std::cout << ordering.LBDegeneracyContract() << endl;
-    //std::cout << ordering.LBDegeneracyContractSubGraph() << endl;
+    // std::cout << ordering.LBDegeneracy() << endl;
+    // std::cout << ordering.LBDegeneracyContract() << endl;
+    // std::cout << ordering.LBDegeneracyContractSubGraph() << endl;
     while (!ordering.IsValidFull())
     {
         int vertex;
@@ -256,7 +258,9 @@ int main(int argc, char **argv)
 
         if (turbocharging_active && !ordering.IsExtendable())
         {
+            times_turbocharged += 1;
             bool succ = false;
+            auto start_turbocharging = std::chrono::high_resolution_clock::now();
             if (vm["turbochargeLASTC"].as<bool>())
             {
                 TurbochargerLastC TC(ordering, graph, distance_matrix);
@@ -309,6 +313,9 @@ int main(int argc, char **argv)
             }
             else
             {
+                auto end_turbocharging = std::chrono::high_resolution_clock::now();
+                chrono::duration<double, std::milli> ms_double = end_turbocharging - start_turbocharging;
+                time_turbocharging += ms_double;
                 cout << "No success" << endl;
                 cout << "Failed at position " << ordering.at << " from " << n << endl;
                 /* Getting number of milliseconds as an integer. */
@@ -316,10 +323,15 @@ int main(int argc, char **argv)
                 auto ms_int = std::chrono::duration_cast<chrono::milliseconds>(end - start);
 
                 /* Getting number of milliseconds as a double. */
-                chrono::duration<double, std::milli> ms_double = end - start;
+                ms_double = end - start;
                 cout << ms_double.count() << "ms" << endl;
+                cout << "Times turbocharged: " << times_turbocharged << endl;
+                cout << "Time turbocharging: " << time_turbocharging.count()<<"ms" <<endl;
                 exit(0);
             }
+            auto end_turbocharging = std::chrono::high_resolution_clock::now();
+            chrono::duration<double, std::milli> ms_double = end_turbocharging - start_turbocharging;
+            time_turbocharging += ms_double;
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -331,4 +343,6 @@ int main(int argc, char **argv)
     /* Getting number of milliseconds as a double. */
     chrono::duration<double, std::milli> ms_double = end - start;
     cout << ms_double.count() << "ms" << endl;
+    cout << "Times turbocharged: " << times_turbocharged << endl;
+    cout << "Time turbocharging: " << time_turbocharging.count()<<"ms" <<endl;
 }

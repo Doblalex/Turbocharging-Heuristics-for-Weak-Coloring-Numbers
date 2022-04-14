@@ -55,6 +55,31 @@ void _dbg(const char *sdbg, TH h, TA... t)
 #endif
 #endif
 
+#if defined(__GNUC__)
+
+#define MY_LIB_IGNORE_DEPRECATED_BEGIN \
+    _Pragma("GCC diagnostic push") \
+    _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
+
+#define MY_LIB_IGNORE_DEPRECATED_END \
+    _Pragma("GCC diagnostic pop")
+
+#elif defined(_MSC_VER)
+
+#define MY_LIB_IGNORE_DEPRECATED_BEGIN \
+    _Pragma("warning(push)") \
+    _Pragma("warning(disable : 4996)")
+
+#define MY_LIB_IGNORE_DEPRECATED_END \
+    _Pragma("warning(pop)")
+
+#else
+
+#define MY_LIB_IGNORE_DEPRECATED_BEGIN
+#define MY_LIB_IGNORE_DEPRECATED_END
+
+#endif
+
 template <class T>
 ostream &operator<<(ostream &out, vector<T> vec)
 {
