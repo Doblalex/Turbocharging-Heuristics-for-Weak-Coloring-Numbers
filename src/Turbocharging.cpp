@@ -196,7 +196,7 @@ bool TurbochargerLastC::Turbocharge(int c, bool only_reorder, bool draw_problem,
     {
         free = new BranchingSetUnordered(freevec);
     }
-    else if (rule = ByDistance)
+    else if (rule == ByDistance)
     {
         free = new BranchingSetOrdered(freevec, CompByDistance(problematic_vertex, distance_matrix));
     }
@@ -1298,7 +1298,7 @@ bool TurbochargerMerge::Try2(int vright)
             {
                 break;
             }
-
+            
             int posi = nextpos;
             int temp = vertex;
             // shift everything to the left and place the vertex at desired position
