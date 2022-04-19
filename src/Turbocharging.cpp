@@ -82,6 +82,9 @@ TurbochargerLastC::TurbochargerLastC(Ordering &ordering, OrderedGraph &graph, ve
     this->r = ordering.r;
     this->target_k = ordering.target_k;
     this->at = ordering.at;
+    this->cnt_nodes = 0;
+    this->sum_depth = 0;
+    this->cnt_depths = 0;
 }
 
 /**
@@ -95,8 +98,13 @@ TurbochargerLastC::TurbochargerLastC(Ordering &ordering, OrderedGraph &graph, ve
  */
 bool TurbochargerLastC::TryContinuous(int i)
 {
-    if (i >= positions.size())
+    this->cnt_nodes++;
+    if (i >= positions.size()) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
         return true;
+    }
+        
     int pos = positions[i];
 
     vector<int> choices;
@@ -136,6 +144,7 @@ bool TurbochargerLastC::TryContinuous(int i)
         choices = choices_actual;
     }
 
+    bool is_some_extendable = false;
     for (int j = 0; j < choices.size(); j++)
     {
         // try to place choices into current position
@@ -144,6 +153,7 @@ bool TurbochargerLastC::TryContinuous(int i)
         ordering.Place(u);
         if (ordering.IsExtendable())
         {
+            is_some_extendable = true;
             free->Rem(u);
             if (TryContinuous(i + 1))
             {
@@ -152,6 +162,11 @@ bool TurbochargerLastC::TryContinuous(int i)
             free->Add(u);
         }
         ordering.UnPlace();
+    }
+    if (!is_some_extendable)
+    {
+        this->cnt_depths += 1;
+        this->sum_depth += i;
     }
     return false;
 }
@@ -219,6 +234,9 @@ TurbochargerRNeigh::TurbochargerRNeigh(Ordering &ordering, OrderedGraph &graph, 
     this->r = ordering.r;
     this->target_k = ordering.target_k;
     this->at = ordering.at;
+    this->cnt_nodes = 0;
+    this->sum_depth = 0;
+    this->cnt_depths = 0;
 }
 
 /**
@@ -230,12 +248,18 @@ TurbochargerRNeigh::TurbochargerRNeigh(Ordering &ordering, OrderedGraph &graph, 
  */
 bool TurbochargerRNeigh::TryNotContinuous(int i)
 {
-    if (i >= positions.size())
+    this->cnt_nodes++;
+    if (i >= positions.size()) {
+        this->sum_depth+=i;
+        this->cnt_depths++;
         return true;
+    }
+        
     int pos = positions[i];
 
     vector<int> choices = free->Get();
 
+    bool is_some_extendable = false;
     for (auto u : choices)
     {
         // try placing u at current position and then also placing all vertices until the next position from the original ordering
@@ -270,6 +294,7 @@ bool TurbochargerRNeigh::TryNotContinuous(int i)
         posi--; // at this position no placement was done
         if (ok)
         {
+            is_some_extendable = true;
             free->Rem(u);
             if (TryNotContinuous(i + 1))
             {
@@ -282,6 +307,11 @@ bool TurbochargerRNeigh::TryNotContinuous(int i)
             ordering.UnPlace();
             posi--;
         }
+    }
+    if (!is_some_extendable)
+    {
+        this->cnt_depths++;
+        this->sum_depth += i;
     }
 
     return false;
@@ -368,8 +398,13 @@ bool TurbochargerRNeigh::TryNotContinuous(int i)
  */
 bool TurbochargerRNeigh::TryNotContinuousOptimized(int i)
 {
-    if (i >= positions.size())
+    this->cnt_nodes++;
+    if (i >= positions.size()) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
         return this->ordering.IsExtendable();
+    }
+        
     int pos = positions[i];
 
     vector<int> choices = free->Get();
@@ -389,6 +424,7 @@ bool TurbochargerRNeigh::TryNotContinuousOptimized(int i)
                 return false;
         }
     }
+    bool is_some_extendable = false;
     for (auto u : choices)
     {
         this->ordering.Place(u, pos);
@@ -400,6 +436,7 @@ bool TurbochargerRNeigh::TryNotContinuousOptimized(int i)
         }
         if (ok)
         {
+            is_some_extendable = true;
             free->Rem(u);
             if (this->TryNotContinuousOptimized(i + 1))
             {
@@ -410,6 +447,10 @@ bool TurbochargerRNeigh::TryNotContinuousOptimized(int i)
         this->ordering.Unplace(pos);
     }
 
+    if (!is_some_extendable) {
+        this->cnt_depths++;
+        this->sum_depth += i;
+    }
     return false;
 }
 
@@ -591,16 +632,25 @@ TurbochargerWreach::TurbochargerWreach(Ordering &ordering, OrderedGraph &graph, 
     this->r = ordering.r;
     this->target_k = ordering.target_k;
     this->at = ordering.at;
+    this->cnt_nodes = 0;
+    this->sum_depth = 0;
+    this->cnt_depths = 0;
 }
 
 bool TurbochargerWreach::TryNotContinuous(int i)
 {
-    if (i >= positions.size())
+    this->cnt_nodes++;
+    if (i >= positions.size()) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
         return true;
+    }
+        
     int pos = positions[i];
 
     vector<int> choices = free->Get();
 
+    bool is_some_extendable = false;
     for (auto u : choices)
     {
         // try placing u at current position and then also placing all vertices until the next position from the original ordering
@@ -635,6 +685,7 @@ bool TurbochargerWreach::TryNotContinuous(int i)
         posi--; // at this position no placement was done
         if (ok)
         {
+            is_some_extendable=true;
             free->Rem(u);
             if (TryNotContinuous(i + 1))
             {
@@ -648,7 +699,10 @@ bool TurbochargerWreach::TryNotContinuous(int i)
             posi--;
         }
     }
-
+    if (!is_some_extendable) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
+    }
     return false;
 }
 
@@ -718,8 +772,13 @@ bool TurbochargerWreach::TryNotContinuous(int i)
 
 bool TurbochargerWreach::TryNotContinuousOptimized(int i)
 {
-    if (i >= positions.size())
+    this->cnt_nodes++;
+    if (i >= positions.size()) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
         return this->ordering.IsExtendable();
+    }
+        
     int pos = positions[i];
 
     vector<int> choices = free->Get();
@@ -739,6 +798,7 @@ bool TurbochargerWreach::TryNotContinuousOptimized(int i)
                 return false;
         }
     }
+    bool is_some_extendable = false;
     for (auto u : choices)
     {
         this->ordering.Place(u, pos);
@@ -750,6 +810,7 @@ bool TurbochargerWreach::TryNotContinuousOptimized(int i)
         }
         if (ok)
         {
+            is_some_extendable = true;
             free->Rem(u);
             if (this->TryNotContinuousOptimized(i + 1))
             {
@@ -758,6 +819,10 @@ bool TurbochargerWreach::TryNotContinuousOptimized(int i)
             free->Add(u);
         }
         this->ordering.Unplace(pos);
+    }
+    if (!is_some_extendable) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
     }
 
     return false;
@@ -938,6 +1003,9 @@ bool TurbochargerWreach::Turbocharge(int c, bool only_reorder, bool draw_problem
 TurbochargerSwapNeighbours::TurbochargerSwapNeighbours(Ordering &ordering, OrderedGraph &graph) : ordering(ordering), graph(graph)
 {
     this->at = ordering.at;
+    this->cnt_nodes = 0;
+    this->sum_depth = 0;
+    this->cnt_depths = 0;
     assert(this->at > 0);
 }
 
@@ -1153,6 +1221,9 @@ TurbochargerMerge::TurbochargerMerge(Ordering &ordering, OrderedGraph &graph) : 
     this->at = ordering.at;
     this->r = ordering.r;
     this->target_k = ordering.target_k;
+    this->cnt_nodes = 0;
+    this->sum_depth = 0;
+    this->cnt_depths = 0;
 }
 
 /**
@@ -1248,9 +1319,15 @@ TurbochargerMerge::TurbochargerMerge(Ordering &ordering, OrderedGraph &graph) : 
  */
 bool TurbochargerMerge::Try2(int vright)
 {
-    if (tryverticessbranch.size() == 0 && ordering.IsExtendable())
+    this->cnt_nodes++;
+    if (tryverticessbranch.size() == 0 && ordering.IsExtendable()) {
+        this->cnt_depths++;
+        this->sum_depth+=(this->tryvertices.size()-tryverticessbranch.size());
         return true;
+    }
+        
     // iterate over all vertices from S_2 that still need to be placed somewhere
+    bool is_some_extendable = false;
     for (auto vertex : vector<int>(tryverticessbranch.begin(), tryverticessbranch.end()))
     {
         // keep track of what we added to whose weakly reachable set
@@ -1309,7 +1386,7 @@ bool TurbochargerMerge::Try2(int vright)
             {
                 break;
             }
-            
+
             int posi = nextpos;
             int temp = vertex;
             // shift everything to the left and place the vertex at desired position
@@ -1327,6 +1404,7 @@ bool TurbochargerMerge::Try2(int vright)
 
             if (ordering.IsExtendable())
             {
+                is_some_extendable=true;
                 if (Try2(vertex))
                 {
                     return true;
@@ -1352,6 +1430,10 @@ bool TurbochargerMerge::Try2(int vright)
             ordering.WreachRem(p.first, p.second);
         }
         tryverticessbranch.insert(vertex);
+    }
+    if (!is_some_extendable) {
+        this->cnt_depths++;
+        this->sum_depth+=(this->tryvertices.size()-tryverticessbranch.size());
     }
     return false;
 }
@@ -1522,7 +1604,6 @@ bool TurbochargerMerge::Turbocharge(bool draw_problem, int c)
                 branchset.insert(rest_vec[num - 1]);
             }
         }
-
         if (Run(branchset))
         {
             return true;

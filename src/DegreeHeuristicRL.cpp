@@ -34,6 +34,7 @@ po::variables_map ParseArgs(int argc, char **argv)
         desc.add_options()("c", po::value<int>(), "set backtracking steps c for turbocharging");
         desc.add_options()("lower-bound", po::bool_switch()->default_value(false), "use lower-bounding");
         desc.add_options()("turbochargeLASTC", po::bool_switch()->default_value(false), "turbocharge last c vertices placed");
+        desc.add_options()("verbose", po::bool_switch()->default_value(false), "verbose");
         po::store(po::parse_command_line(argc, argv, desc), vm);
 
         if (vm.count("help"))
@@ -130,6 +131,7 @@ int main(int argc, char **argv)
         pq.insert(v); // n log n insert into priority queue
     }
     auto start = std::chrono::high_resolution_clock::now();
+    vector<map<string,string>> tc_tracker;
     while (!ordering.IsValidFull())
     {
         int vertex = *pq.begin();
@@ -157,6 +159,13 @@ int main(int argc, char **argv)
             {
                 TurbochargerLastC TC(ordering, graph);
                 succ = TC.Turbocharge(c);
+                map<string,string> m;
+                m["cnt_nodes"] = to_string(TC.cnt_nodes);
+                m["cnt_depths"] = to_string(TC.cnt_depths);
+                m["sum_depth"] = to_string(TC.sum_depth);
+                m["pos"] = to_string(ordering.at);
+                m["n"] = to_string(n);
+                tc_tracker.push_back(m);
             }
             if (succ)
             {
@@ -178,6 +187,7 @@ int main(int argc, char **argv)
                 auto end_turbocharging = std::chrono::high_resolution_clock::now();
                 chrono::duration<double, std::milli> ms_double = end_turbocharging - start_turbocharging;
                 time_turbocharging += ms_double;
+                tc_tracker[tc_tracker.size()-1]["time"] = to_string(ms_double.count());
                 cout << "No success" << endl;
                 cout << "Failed at position " << ordering.at << " from " << n << endl;
                 /* Getting number of milliseconds as an integer. */
@@ -189,11 +199,17 @@ int main(int argc, char **argv)
                 cout << ms_double.count() << "ms" << endl;
                 cout << "Times turbocharged: " << times_turbocharged << endl;
                 cout << "Time turbocharging: " << time_turbocharging.count()<<"ms" <<endl;
+                if (vm["verbose"].as<bool>()) {
+                    for (auto x : tc_tracker) {
+                        cout<<x["cnt_nodes"]<<" "<<x["cnt_depths"]<<" "<<x["sum_depth"]<<" "<<x["pos"]<<" "<<x["n"]<<" "<<x["time"]<<endl;
+                    }
+                }
                 exit(0);
             }
             auto end_turbocharging = std::chrono::high_resolution_clock::now();
             chrono::duration<double, std::milli> ms_double = end_turbocharging - start_turbocharging;
             time_turbocharging += ms_double;
+            tc_tracker[tc_tracker.size()-1]["time"] = to_string(ms_double.count());
         }
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -207,4 +223,9 @@ int main(int argc, char **argv)
     cout << ms_double.count() << "ms" << endl;
     cout << "Times turbocharged: " << times_turbocharged << endl;
     cout << "Time turbocharging: " << time_turbocharging.count()<<"ms" <<endl;
+    if (vm["verbose"].as<bool>()) {
+        for (auto x : tc_tracker) {
+            cout<<x["cnt_nodes"]<<" "<<x["cnt_depths"]<<" "<<x["sum_depth"]<<" "<<x["pos"]<<" "<<x["n"]<<" "<<x["time"]<<endl;
+        }
+    }
 }

@@ -242,3 +242,9 @@ results/Merge/*
 results/RNeigh_Wreach/*
 results/SwapLS/*
 results/LASTCRL/*
+resultswcol/*
+resultswcol5min/*
+clusterrunner.py
+startscript.sh
+src/core
+src/Makefile.save
