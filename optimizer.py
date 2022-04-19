@@ -136,7 +136,7 @@ if __name__ == "__main__":
             print_improvement(colnumber, ordering, starttime,
                               c, times_turbocharged, runtime, time_turbocharging)
     except TimeoutError:
-        if "output" in args:
+        if args.output is not None:
             with open(args.output, "w") as f:
                 f.write(json.dumps(outputobj))
         print("Timeout")
