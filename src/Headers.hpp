@@ -9,6 +9,8 @@
 #include <boost/format.hpp>
 #include <boost/graph/iteration_macros.hpp>
 #include <random>
+#include <tuple>
+#include <string>
 #include "./dynamic-graph/dynamic_connectivity.hpp"
 #define MP make_pair
 #define PB push_back

@@ -5,21 +5,30 @@ TurbochargerLastC::TurbochargerLastC(OrderingRL &ordering, OrderedGraph &graph) 
     this->r = ordering.r;
     this->target_k = ordering.target_k;
     this->at = ordering.at;
+    this->cnt_nodes = 0;
+    this->cnt_depths = 0;
+    this->sum_depth = 0;
 }
 
 bool TurbochargerLastC::TryContinuous(int i)
 {
-    if (i == c)
+    this->cnt_nodes++;
+    if (i == c) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
         return ordering.IsExtendable();
+    }
+        
 
     vector<int> choices_vec(choices.begin(), choices.end());
     shuffle(choices_vec.begin(), choices_vec.end(), rng);
-
+    bool is_some_extendable = false;
     for (auto v : choices_vec)
     {
         ordering.Place(v);
         if (ordering.IsExtendable())
         {
+            is_some_extendable = true;
             choices.erase(v);
             if (TryContinuous(i + 1))
             {
@@ -28,6 +37,10 @@ bool TurbochargerLastC::TryContinuous(int i)
             choices.insert(v);
         }
         ordering.UnPlace();
+    }
+    if (!is_some_extendable) {
+        this->cnt_depths++;
+        this->sum_depth+=i;
     }
     return false;
 }

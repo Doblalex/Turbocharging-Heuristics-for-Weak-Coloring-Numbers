@@ -87,6 +87,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     TurbochargerLastC(Ordering &ordering, OrderedGraph &graph, vector<vector<int>> &distance_matrix);
     bool Turbocharge(int c, bool only_reorder, bool draw_problem, BranchingRule rule);
 };
@@ -98,7 +101,6 @@ private:
     bool TryNotContinuousOptimizedOld(int i);
     bool TryNotContinuousOptimized(int i);
     unordered_map<int, int> original_ordering;
-
 public:
     using BranchSet = set<int, std::function<bool(const int a, const int b)>>;
     BranchingSet *free;
@@ -109,6 +111,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     TurbochargerRNeigh(Ordering &ordering, OrderedGraph &graph, vector<vector<int>> &distance_matrix);
     bool TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule);
     bool Turbocharge(int c, bool only_reorder, bool draw_problem, BranchingRule rule);
@@ -121,7 +126,6 @@ private:
     bool TryNotContinuousOptimizedOld(int i);
     bool TryNotContinuousOptimized(int i);
     unordered_map<int, int> original_ordering;
-
 public:
     using BranchSet = set<int, std::function<bool(const int a, const int b)>>;
     BranchingSet *free;
@@ -132,6 +136,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     TurbochargerWreach(Ordering &ordering, OrderedGraph &graph, vector<vector<int>> &distance_matrix);
     bool TurbochargeOld(int c, bool only_reorder, bool draw_problem, BranchingRule rule);
     bool Turbocharge(int c, bool only_reorder, bool draw_problem, BranchingRule rule);
@@ -150,6 +157,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     TurbochargerSwapNeighbours(Ordering &ordering, OrderedGraph &graph);
     bool Turbocharge(bool draw_problem);
 };
@@ -165,6 +175,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     TurbochargerSwapLocalSearch(Ordering &ordering, OrderedGraph &graph);
     bool Turbocharge(bool draw_problem);
 };
@@ -184,6 +197,9 @@ public:
     int target_k;
     int at;
     int r;
+    long long cnt_nodes;
+    long long sum_depth;
+    long long cnt_depths;
     Ordering &ordering;
     OrderedGraph &graph;
     TurbochargerMerge(Ordering &ordering, OrderedGraph &graph);
