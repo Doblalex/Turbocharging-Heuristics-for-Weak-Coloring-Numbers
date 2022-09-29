@@ -242,9 +242,12 @@ results/Merge/*
 results/RNeigh_Wreach/*
 results/SwapLS/*
 results/LASTCRL/*
+runner.py
 resultswcol/*
 resultswcol5min/*
 clusterrunner.py
 startscript.sh
 src/core
 src/Makefile.save
+
+bounds.csv

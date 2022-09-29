@@ -158,7 +158,7 @@ int main(int argc, char **argv)
     int n = boost::num_vertices(graph);
     vector<vector<int>> distance_matrix;
     Ordering ordering(graph, radius, vm["turbochargeLASTC"].as<bool>() && !vm["only-reorder"].as<bool>(), lower_bound, vm["ordered-adj"].as<bool>(), vm["ignore-right"].as<bool>(), opt_components);
-
+    
     ordering.target_k = target_k;
 
     if (branching_rule == ByDistance)
@@ -193,10 +193,7 @@ int main(int argc, char **argv)
         pq.insert({v, 1}); // n log n insert into priority queue
     }
     auto start = std::chrono::high_resolution_clock::now();
-
-    // std::cout << ordering.LBDegeneracy() << endl;
-    // std::cout << ordering.LBDegeneracyContract() << endl;
-    // std::cout << ordering.LBDegeneracyContractSubGraph() << endl;
+  
 
     vector<map<string,string>> tc_tracker;
     while (!ordering.IsValidFull())

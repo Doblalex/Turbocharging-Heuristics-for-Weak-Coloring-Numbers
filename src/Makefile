@@ -8,7 +8,7 @@ CXXFLAGS=-DLOCAL -std=c++17 -O3
 #LDFLAGS += -fsanitize=address -fsanitize=undefined
 
 # Boost C++ library
-ROOT_BOOST = /home1/share/boost/1.77.0/lib/
+ROOT_BOOST = /lib/x86_64-linux-gnu
 
 LDFLAGS += -L$(ROOT_BOOST) -lboost_program_options -lboost_system -lboost_graph
 SOURCES=$(wildcard *.cpp)

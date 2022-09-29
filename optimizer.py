@@ -11,6 +11,8 @@ from datetime import datetime
 import os
 import sys
 
+cwdhere = "."
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -99,7 +101,7 @@ if __name__ == "__main__":
     options = []
     if args.options:
         options = args.options
-    options_prog = ["./"+args.heuristic]+["--"+opt for opt in options]
+    options_prog = ["./src/"+args.heuristic]+["--"+opt for opt in options]
     options_prog.extend([tc])
     options_prog.extend(["--rad", str(args.radius)])
     options_prog.extend(["--in", args.graphpath])
@@ -113,11 +115,11 @@ if __name__ == "__main__":
         signal.signal(signal.SIGALRM, handler)
         signal.setitimer(signal.ITIMER_REAL, float(timeout))
         out = subprocess.check_output(
-            ["./" + args.heuristic, "--in", args.graphpath, "--rad", str(args.radius)], cwd="/home1/adobler/Turbocharging-Heuristics-for-Weak-Coloring-Numbers/src")
+            ["./src/" + args.heuristic, "--in", args.graphpath, "--rad", str(args.radius)], cwd=cwdhere)
         colnumber, ordering, runtime, times_turbocharged, time_turbocharging, tc_tracker = decode_out(
             out)
-        # if not verify(args.graphpath, ordering, args.radius, colnumber):
-        #     assert False
+        if not verify(args.graphpath, ordering, args.radius, colnumber):
+            assert False
         print_improvement(colnumber, ordering, starttime,
                           0, times_turbocharged, runtime, time_turbocharging, tc_tracker)
         while True:
@@ -130,10 +132,10 @@ if __name__ == "__main__":
                 print("conservation parameter: ", c)
                 if args.turbocharging in ["SwapLS", "SwapN"]:
                     out = subprocess.check_output(
-                        options_prog+["--k", str(colnumber)], cwd="/home1/adobler/Turbocharging-Heuristics-for-Weak-Coloring-Numbers/src")
+                        options_prog+["--k", str(colnumber)], cwd=cwdhere)
                 else:
                     out = subprocess.check_output(
-                        options_prog+["--c", str(c), "--k", str(colnumber)], cwd="/home1/adobler/Turbocharging-Heuristics-for-Weak-Coloring-Numbers/src")
+                        options_prog+["--c", str(c), "--k", str(colnumber)], cwd=cwdhere)
                 colnumber_n, ordering_n, runtime, times_turbocharged, time_turbocharging, tc_tracker = decode_out(
                     out)
                 if ordering_n != None:
@@ -143,13 +145,16 @@ if __name__ == "__main__":
                 non_improvement(colnumber, starttime, c,
                                 times_turbocharged, runtime, time_turbocharging, tc_tracker)
                 c += 1
-            # if not verify(args.graphpath, ordering, args.radius, colnumber):
-            #     assert False
+            if not verify(args.graphpath, ordering, args.radius, colnumber):
+                assert False
             print_improvement(colnumber, ordering, starttime,
                               c, times_turbocharged, runtime, time_turbocharging, tc_tracker)
     except TimeoutError:
         if args.output is not None:
+<<<<<<< HEAD
             os.makedirs(os.path.dirname(args.output), exist_ok=True)
+=======
+>>>>>>> origin/main
             with open(args.output, "w") as f:
                 f.write(json.dumps(outputobj))
         print("Timeout")
