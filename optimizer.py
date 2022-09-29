@@ -92,7 +92,6 @@ def verify(graphpath, ordering, rad, colnumber):
     ok = ok and (colnumber == max(wreach_sz.values()))
     return ok
 
-
 if __name__ == "__main__":
     args = parse_args()
     tc = "--turbocharge" + args.turbocharging
@@ -149,13 +148,15 @@ if __name__ == "__main__":
             print_improvement(colnumber, ordering, starttime,
                               c, times_turbocharged, runtime, time_turbocharging, tc_tracker)
     except TimeoutError:
-        if "output" in args:
+        if args.output is not None:
+            os.makedirs(os.path.dirname(args.output), exist_ok=True)
             with open(args.output, "w") as f:
                 f.write(json.dumps(outputobj))
         print("Timeout")
     except Exception as e:
         outputobj["error"] = str(e)
-        if "output" in args:
+        if args.output is not None:
+            os.makedirs(os.path.dirname(args.output), exist_ok=True)
             with open(args.output, "w") as f:
                 f.write(json.dumps(outputobj))
         print(args.graphpath, e, file=sys.stderr)

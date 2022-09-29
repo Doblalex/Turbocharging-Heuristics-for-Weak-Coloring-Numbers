@@ -1,10 +1,10 @@
 EXECS=WreachHeuristic DegreeHeuristic DegreeHeuristicRL SreachHeuristic LowerBound
 
-OPTFLAGS=-O2 -std=c++17
-OPTLOCALFLAGS= -DLOCAL -std=c++17 -O2
+OPTFLAGS=-O3 -std=c++17
+OPTLOCALFLAGS= -DLOCAL -std=c++17 -O3
 DBGFLAGS= -DLOCAL -lubsan -std=c++17 -fsanitize=address -g -fsanitize=undefined -pedantic -D_GLIBCXX_DEBUG -Wall -Wextra -Wfloat-equal -Wlogical-op -Wshadow -Wunused
 #CXXFLAGS= -DLOCAL -lubsan -std=c++11 -fsanitize=address -g -fsanitize=undefined -pedantic -D_GLIBCXX_DEBUG -Wall -Wextra -Wfloat-equal -Wlogical-op -Wshadow -Wunused
-CXXFLAGS=-DLOCAL -std=c++17 -O2
+CXXFLAGS=-DLOCAL -std=c++17 -O3
 #LDFLAGS += -fsanitize=address -fsanitize=undefined
 
 # Boost C++ library
@@ -14,6 +14,7 @@ LDFLAGS += -L$(ROOT_BOOST) -lboost_program_options -lboost_system -lboost_graph
 SOURCES=$(wildcard *.cpp)
 DEPENDS=$(patsubst %.cpp,.%.depends,$(SOURCES))
 OBJECTS=$(patsubst %.cpp,%.o,$(SOURCES))
+CXX=g++-11
 
 debug: CXXFLAGS = -DDEBUG -g -DLOCAL -std=c++17
 debug: OPTFLAGS = std=c++17
