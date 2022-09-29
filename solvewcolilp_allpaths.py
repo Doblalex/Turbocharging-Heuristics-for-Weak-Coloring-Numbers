@@ -40,10 +40,9 @@ def get_initial_solution(args):
         ord = subprocess.check_output(["./src/SreachHeuristic", "--in", args.graphpath, "--rad", str(args.radius)]).decode("utf-8").split("\n")[1]
         ord = list(ord.split(" "))
         return ord
-    except Exception as e:
-        print(e)
+    except:
         return None
-
+cnt_lazy = 0
 def main():
     args = parse_args()
     ordinitial = get_initial_solution(args)
@@ -66,70 +65,71 @@ def main():
                 ordvar[u,v].Start = 1
             else:
                 ordvar[u,v].Start = 0
-    wreachvars = model.addVars(it.product(nodeset, nodeset, range(args.radius+1)),vtype=GRBpy.BINARY)
-    ans = model.addVar(vtype = GRBpy.INTEGER)
-    """G = nx.read_adjlist(args.graphpath, create_using=nx.Graph)
-    
-    for v in nodelist:
-        for w in nodelist:
-            for r in range(args.radius+1): wreachvars[v,w,r].Start = 0
-
-    wreach_sz = defaultdict(int)
-    for v in ordinitial:
-        T = nx.bfs_tree(G, v, depth_limit=args.radius)
-        for w in T.nodes:
-            pl = nx.shortest_path_length(v,w)
-            print(pl)
-            for r in range(pl,args.radius+1): wreachvars[v,w,r] = 1
-                
-        reachable_edges = list(nx.bfs_edges(G, v, depth_limit=args.radius))
-        reachable = set(
-            list(node for edge in reachable_edges for node in edge))
-        reachable.add(v)
-        for u in reachable:
-            wreach_sz[u] += 1
-        G.remove_node(v)
-    ans.Start = max(wreach_sz.values())"""
+    wreachvars = model.addVars(it.product(nodeset, nodeset), vtype=GRBpy.BINARY)
+    ans = model.addVar(vtype=GRBpy.INTEGER)
     for i, u in enumerate(nodelist):
         for j, v in enumerate(nodelist[i+1:]):
             for w in nodelist[i+j+2:]:
                 model.addConstr(0<=ordvar[u,v]+ordvar[v,w]-ordvar[u,w])
                 model.addConstr(ordvar[u,v]+ordvar[v,w]-ordvar[u,w]<=1)
     for u in nodelist:
-        model.addConstr(wreachvars[u,u,0]==1)
-        for v in nodelist:
-            for r in range(1, args.radius+1):
-                model.addConstr(wreachvars[u,v,r]>=wreachvars[u,v,r-1])
+        model.addConstr(wreachvars[u,u]==1)
     for v,w in graph.edges:
-        for u in nodelist:                      
-            for r in range(args.radius):                
-                # wreachvars(u,v,r) and ordvar[u,w] -> u in wreach_r+1(w)
-                if u != w:                   
-                    if (u,w) in ordvar:                                            
-                        model.addConstr(wreachvars[u,v,r]+ordvar[u,w]<=1+wreachvars[u,w,r+1])
-                    else:                        
-                        model.addConstr(wreachvars[u,v,r]+(1-ordvar[w,u])<=1+wreachvars[u,w,r+1])
-        v,w = w,v
-        for u in nodelist:                      
-            for r in range(args.radius):                
-                # wreachvars(u,v,r) and ordvar[u,w] -> u in wreach_r+1(w)
-                if u != w:                   
-                    if (u,w) in ordvar:                                            
-                        model.addConstr(wreachvars[u,v,r]+ordvar[u,w]<=1+wreachvars[u,w,r+1])
-                    else:                        
-                        model.addConstr(wreachvars[u,v,r]+(1-ordvar[w,u])<=1+wreachvars[u,w,r+1])
+        if (v,w) in ordvar:
+            model.addConstr(wreachvars[v,w]>=ordvar[v,w])
+            model.addConstr(wreachvars[w,v]>=(1-ordvar[v,w]))
+        else:
+            model.addConstr(wreachvars[v,w]>=(1-ordvar[w,v]))
+            model.addConstr(wreachvars[w,v]>=ordvar[w,v])
                     
                 
     for u in nodelist:
-        model.addConstr(ans>=gp.quicksum(wreachvars[v,u,args.radius] for v in nodelist))
-        
+        model.addConstr(ans>=gp.quicksum(wreachvars[v,u] for v in nodelist))
+    
+    
     def mycallback(model, where):
+        global cnt_lazy
         if where == GRBpy.Callback.MIPSOL:
+            print(model)            
             print("Integer solution: ", model.cbGetSolution(model._ans))
+            vals = model.cbGetSolution(model._ordvar)
+            valswreach = model.cbGetSolution(model._wreachvars)
+            ordering = [0 for _ in range(len(nodelist))]
+            for u in nodelist:
+                pos = -1
+                for v in nodelist:
+                    if ((v,u) in vals and vals[v,u] >= 0.5) or ((u,v) in vals and vals[u,v]<0.5) or u==v:
+                        pos+=1
+                ordering[pos] = u
+            g = graph.copy()
+            wreach_sz = defaultdict(int)
+            for v in ordering:
+                tree = nx.bfs_tree(g, v, depth_limit=args.radius)
+                reachable_edges = list(nx.bfs_edges(g, v, depth_limit=args.radius))
+                reachable = set(
+                    list(node for edge in reachable_edges for node in edge))
+                reachable.add(v)
+                for u in reachable:
+                    wreach_sz[u] += 1
+                for u in reachable:
+                    if valswreach[v,u] < 0.5:
+                        path = nx.shortest_path(tree, v, u)
+                        vars = []
+                        for x in path[1:]:
+                            if (v,x) in keys:
+                                vars.append(model._ordvar[v,x])
+                            else:
+                                vars.append(1-model._ordvar[x,v])
+                        cnt_lazy += 1
+                        model.cbLazy(gp.quicksum(var for var in vars)-(len(vars)-1)<=model._wreachvars[v,u])
+                g.remove_node(v)
+            print(cnt_lazy)
     
-    
+    model.Params.LazyConstraints = 1
     model.setObjective(ans, sense = GRBpy.MINIMIZE)
     model._ans = ans
+    model._wreachvars = wreachvars
+    model._ordvar = ordvar
     model.optimize(mycallback)
     if model.status == GRBpy.OPTIMAL:
         vals = model.getAttr("X", ordvar)
