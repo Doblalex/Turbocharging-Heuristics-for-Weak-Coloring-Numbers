@@ -1,4 +1,4 @@
-EXECS=WreachHeuristic DegreeHeuristic DegreeHeuristicRL SreachHeuristic LowerBound
+EXECS=WreachHeuristic DegreeHeuristic DegreeHeuristicRL SreachHeuristic LowerBound SolveMerge
 
 OPTFLAGS=-O3 -std=c++17
 OPTLOCALFLAGS= -DLOCAL -std=c++17 -O3
@@ -36,6 +36,9 @@ SreachHeuristic: SreachHeuristic.o ReadTxt.o FilesOps.o FlagParser.o Turbochargi
 	$(CXX) $^ -o $@ $(LDFLAGS) 
 
 LowerBound: LowerBound.o ReadTxt.o FilesOps.o FlagParser.o Turbocharging.o Ordering.o DSU.o
+	$(CXX) $^ -o $@ $(LDFLAGS) 
+
+SolveMerge: SolveMerge.o ReadTxt.o FilesOps.o FlagParser.o Turbocharging.o Ordering.o DSU.o
 	$(CXX) $^ -o $@ $(LDFLAGS) 
 
 .%.depends: %.cpp

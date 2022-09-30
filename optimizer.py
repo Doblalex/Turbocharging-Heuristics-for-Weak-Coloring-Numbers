@@ -151,10 +151,7 @@ if __name__ == "__main__":
                               c, times_turbocharged, runtime, time_turbocharging, tc_tracker)
     except TimeoutError:
         if args.output is not None:
-<<<<<<< HEAD
             os.makedirs(os.path.dirname(args.output), exist_ok=True)
-=======
->>>>>>> origin/main
             with open(args.output, "w") as f:
                 f.write(json.dumps(outputobj))
         print("Timeout")

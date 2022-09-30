@@ -250,4 +250,6 @@ startscript.sh
 src/core
 src/Makefile.save
 outilp/*
+src/SolveMerge
+
 bounds.csv
