@@ -249,5 +249,6 @@ clusterrunner.py
 startscript.sh
 src/core
 src/Makefile.save
+src/SolveMerge
 
 bounds.csv
