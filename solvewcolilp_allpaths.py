@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.7
 import argparse
 from platform import java_ver
 import networkx as nx

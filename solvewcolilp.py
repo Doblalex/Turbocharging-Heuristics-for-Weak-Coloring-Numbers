@@ -1,3 +1,4 @@
+#!/usr/bin/env python3.7
 import argparse
 from platform import java_ver
 import networkx as nx
@@ -6,6 +7,8 @@ from gurobipy import GRB as GRBpy, max_
 import itertools as it
 from collections import defaultdict
 import subprocess
+import os
+import time
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -51,7 +54,7 @@ def main():
     nodeset = set(graph.nodes)
     nodelist = list(graph.nodes)
     model = gp.Model()
-    
+    startt = time.time()
     keys = []
     for i, u in enumerate(nodelist):
         for v in nodelist[i+1:]:
@@ -130,6 +133,7 @@ def main():
     
     model.setObjective(ans, sense = GRBpy.MINIMIZE)
     model._ans = ans
+    model.Params.Threads = 1
     model.optimize(mycallback)
     if model.status == GRBpy.OPTIMAL:
         vals = model.getAttr("X", ordvar)
@@ -140,6 +144,12 @@ def main():
                 if ((v,u) in vals and vals[v,u] >= 0.5) or ((u,v) in vals and vals[u,v]<0.5) or u==v:
                     pos+=1
             ordering[pos] = u
+        filename = os.path.basename(args.graphpath)
+        with open(f"outilp/res_{args.radius}_{filename}.txt", "w") as f:
+            f.write("Ordering: " + " ".join(map(str, ordering)) + "\n")
+            f.write("Time: " + str(time.time()-startt) + "\n")
+            f.write("Weak coloring number: " + str(ans.X) + "\n")
+            
         print("Ordering: ", *ordering)
         print("Weak coloring number:", ans.X)
         assert(verify(args.graphpath, ordering, args.radius, int(ans.X)))  

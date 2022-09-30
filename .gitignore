@@ -249,5 +249,5 @@ clusterrunner.py
 startscript.sh
 src/core
 src/Makefile.save
-
+outilp/*
 bounds.csv
