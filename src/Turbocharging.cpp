@@ -1545,7 +1545,7 @@ bool TurbochargerMerge::Turbocharge(bool draw_problem, int c)
         // GraphDrawer::getInstance().DrawGraph(graph);
     }
 
-    assert(!ordering.IsExtendable());
+    // assert(!ordering.IsExtendable());
     // first vertices to choose for sets S_2
     unordered_set<int> wreach_union;
 

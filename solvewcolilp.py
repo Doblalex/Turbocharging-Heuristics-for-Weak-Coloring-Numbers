@@ -5,7 +5,7 @@ import networkx as nx
 import gurobipy as gp
 from gurobipy import GRB as GRBpy, max_
 import itertools as it
-from collections import defaultdict
+from collections import defaultdict, deque
 import subprocess
 import os
 import time
@@ -47,10 +47,55 @@ def get_initial_solution(args):
         print(e)
         return None
 
+def get_lowerbound(args):
+    try:
+        ord = subprocess.check_output(["./src/LowerBound", "--in", args.graphpath, "--rad", str(args.radius)]).decode("utf-8").split("\n")
+        ret = 0
+        for x in ord:
+            if x.strip() == "": continue
+            ret = max(ret, int(x.split(": ")[1]))
+        return ret
+    except Exception as e:
+        print(e)
+        return None    
+    
+def reduction_rule(graph: nx.Graph, lowerbound, radius):
+    ordend = deque()
+    print(f"Starting nodes: {(graph.number_of_nodes())}")
+    print(f"Lower bound: {lowerbound}")
+    removednode = True
+    num_nodes = 0
+    
+    while removednode:
+        removednode = False
+        for node in list(graph.nodes):
+            if graph.degree(node) == 1 and nx.bfs_tree(graph, node, depth_limit=radius).number_of_nodes() <= lowerbound:
+                graph.remove_node(node)
+                ordend.appendleft(node)
+                num_nodes+=1
+                removednode = True
+                
+    for node in graph.nodes:
+        graphnew = graph.copy()
+        graphnew.remove_node(node)
+        canremove = True
+        for neigh in graph.neighbors(node):
+            if neigh == node: continue
+            num_reachable = nx.bfs_tree(graphnew, neigh, depth_limit=radius).number_of_nodes()+1
+            if num_reachable > lowerbound:
+                canremove = False
+        if canremove:
+            print(f"Can remove {node}")
+        
+    print(f"Number of removed: {num_nodes}")
+    return list(ordend)
+
 def main():
     args = parse_args()
+    
     ordinitial = get_initial_solution(args)
     graph: nx.Graph = nx.read_adjlist(args.graphpath)
+    ordend = reduction_rule(graph, get_lowerbound(args), args.radius)
     nodeset = set(graph.nodes)
     nodelist = list(graph.nodes)
     model = gp.Model()
@@ -133,7 +178,6 @@ def main():
     
     model.setObjective(ans, sense = GRBpy.MINIMIZE)
     model._ans = ans
-    model.Params.Threads = 1
     model.optimize(mycallback)
     if model.status == GRBpy.OPTIMAL:
         vals = model.getAttr("X", ordvar)
@@ -144,6 +188,7 @@ def main():
                 if ((v,u) in vals and vals[v,u] >= 0.5) or ((u,v) in vals and vals[u,v]<0.5) or u==v:
                     pos+=1
             ordering[pos] = u
+        ordering = ordering+ordend
         filename = os.path.basename(args.graphpath)
         with open(f"outilp/res_{args.radius}_{filename}.txt", "w") as f:
             f.write("Ordering: " + " ".join(map(str, ordering)) + "\n")
